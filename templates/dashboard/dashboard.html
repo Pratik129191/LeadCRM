@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <h3 class="mb-4">Dashboard</h3>
+
+    <div class="row">
+
+        <!-- Total Leads -->
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+
+                    <h5>Total Leads</h5>
+
+                    <h2 class="text-primary">
+                        {{ total_leads }}
+                    </h2>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Interested Leads -->
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+
+                    <h5>Interested</h5>
+
+                    <h2 class="text-warning">
+                        {{ interested_leads }}
+                    </h2>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Won Deals -->
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+
+                    <h5>Won Deals</h5>
+
+                    <h2 class="text-success">
+                        {{ won_leads }}
+                    </h2>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Pipeline Value -->
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+
+                    <h5>Pipeline Value</h5>
+
+                    <h2 class="text-info">
+                        ₹{{ pipeline_value }}
+                    </h2>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <hr>
+
+    <div class="row">
+
+        <!-- Followups Today -->
+
+        <div class="col-md-6">
+
+            <div class="card shadow-sm">
+
+                <div class="card-body">
+
+                    <h5>Followups Today</h5>
+
+                    <h3 class="text-danger">
+                        {{ followups_today }}
+                    </h3>
+
+                    <a href="/followups/today/" class="btn btn-sm btn-primary">
+                        View Followups
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+{% endblock %}

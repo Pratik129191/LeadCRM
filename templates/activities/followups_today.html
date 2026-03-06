@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <h2>Follow Ups Today</h2>
+
+    <table class="table">
+
+        <thead>
+        <tr>
+            <th>Lead</th>
+            <th>Phone</th>
+            <th>Activity</th>
+            <th>Note</th>
+        </tr>
+        </thead>
+
+        <tbody>
+
+        {% for activity in activities %}
+
+            <tr>
+
+                <td>
+                    <a href="{% url 'lead_detail' activity.lead.id %}">
+                        {{ activity.lead.name }}
+                    </a>
+                </td>
+
+                <td>{{ activity.lead.phone }}</td>
+
+                <td>{{ activity.activity_type }}</td>
+
+                <td>{{ activity.note }}</td>
+
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+{% endblock %}

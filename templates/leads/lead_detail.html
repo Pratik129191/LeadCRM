@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>{{ lead.name }}</h2>
+    
+    <p><strong>Phone:</strong> {{ lead.phone }}</p>
+    <p><strong>Email:</strong> {{ lead.email }}</p>
+    <p><strong>Status:</strong> {{ lead.status }}</p>
+    
+    <hr>
+    <a href="{% url 'lead_update' lead.id %}" class="btn btn-warning">
+        Edit Lead
+    </a>
+    <h4>Add Activity</h4>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="btn btn-primary">Add Activity</button>
+    </form>
+
+    <hr>
+    <h4>Activity Timeline</h4>
+
+    {% for activity in activities %}
+        <div class="card mb-2">
+            <div class="card-body">
+                <strong>{{ activity.activity_type }}</strong>
+                <br>
+                {{ activity.note }}
+                <br><br>
+                <small>
+                    By {{ activity.user }} |
+                    {{ activity.created_at }}
+                </small>
+                {% if activity.next_follow_up %}
+                    <div class="text-danger">
+                        Follow up on: {{ activity.next_follow_up }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

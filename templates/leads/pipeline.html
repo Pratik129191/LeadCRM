@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <h2>Sales Pipeline</h2>
+
+    <div class="row">
+
+        <div class="col">
+            <h5>NEW</h5>
+            {% for lead in new_leads %}
+                <div class="card p-2 mb-2">
+                    {{ lead.name }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="col">
+            <h5>CALLED</h5>
+            {% for lead in called_leads %}
+                <div class="card p-2 mb-2">
+                    {{ lead.name }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="col">
+            <h5>FOLLOW UP</h5>
+            {% for lead in followup_leads %}
+                <div class="card p-2 mb-2">
+                    {{ lead.name }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="col">
+            <h5>INTERESTED</h5>
+            {% for lead in interested_leads %}
+                <div class="card p-2 mb-2">
+                    {{ lead.name }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="col">
+            <h5>PROPOSAL</h5>
+            {% for lead in proposal_leads %}
+                <div class="card p-2 mb-2">
+                    {{ lead.name }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="col">
+            <h5>WON</h5>
+            {% for lead in won_leads %}
+                <div class="card p-2 mb-2">
+                    {{ lead.name }}
+                </div>
+            {% endfor %}
+        </div>
+
+    </div>
+
+{% endblock %}
