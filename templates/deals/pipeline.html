@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% load template_filters %}
+
+{% block content %}
+
+    <h2 class="mb-4">Deal Pipeline</h2>
+
+    <div class="row">
+
+        {% for stage in stages %}
+
+            <div class="col">
+
+                <div class="card shadow-sm">
+
+                    <div class="card-header bg-light">
+                        <strong>{{ stage.name }}</strong>
+                    </div>
+
+                    <div class="card-body">
+
+                        {% for deal in stage_map|get_item:stage.id %}
+
+                            <div class="card mb-2 p-2">
+
+                                <strong>
+                                    <a href="{% url 'lead_detail' deal.lead.id %}">
+                                        {{ deal.lead.name }}
+                                    </a>
+                                </strong>
+
+                                <div class="small text-muted">
+                                    ₹{{ deal.value }}
+                                </div>
+
+                            </div>
+
+                        {% empty %}
+
+                            <div class="text-muted small">
+                                No deals
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+{% endblock %}

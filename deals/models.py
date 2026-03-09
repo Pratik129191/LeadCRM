@@ -121,3 +121,5 @@ class Deal(models.Model):
 
     def __str__(self):
         return f"Deal - {self.lead}"
+
+

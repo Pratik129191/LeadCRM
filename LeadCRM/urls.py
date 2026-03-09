@@ -41,4 +41,6 @@ urlpatterns = [
 
     path('dashboard/', include('dashboard.urls')),
 
+    path('deals/', include('deals.urls')),
+
 ]

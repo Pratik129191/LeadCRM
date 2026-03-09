@@ -5,6 +5,7 @@ from django.shortcuts import render
 from leads.models import Lead
 from core.constants import LeadStatus
 from activities.models import Activity
+from deals.models import Deal
 from datetime import date
 
 
@@ -41,12 +42,37 @@ def dashboard(request):
         next_follow_up__date=today
     ).count()
 
+    won_revenue = Deal.objects.filter(
+        organization=org,
+        stage__is_won=True
+    ).aggregate(total=Sum("value"))["total"] or 0
+
+    open_pipeline_value = Deal.objects.filter(
+        organization=org,
+        stage__is_closed=False
+    ).aggregate(total=Sum("value"))["total"] or 0
+
+    won_deals = Deal.objects.filter(
+        organization=org,
+        stage__is_won=True
+    ).count()
+
+    lost_deals = Deal.objects.filter(
+        organization=org,
+        stage__is_closed=True,
+        stage__is_won=False
+    ).count()
+
     context = {
         'total_leads': total_leads,
         'interested_leads': interested_leads,
         'won_leads': won_leads,
         'pipeline_value': pipeline_value,
         'followups_today': followups_today,
+        "won_revenue": won_revenue,
+        "open_pipeline_value": open_pipeline_value,
+        "won_deals": won_deals,
+        "lost_deals": lost_deals,
     }
 
     return render(
