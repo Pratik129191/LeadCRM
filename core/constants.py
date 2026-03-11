@@ -19,14 +19,5 @@ class LeadStatus:
     ]
 
 
-class DealStatus:
 
-    OPEN = "OPEN"
-    WON = "WON"
-    LOST = "LOST"
 
-    CHOICES = [
-        (OPEN, "Open"),
-        (WON, "Won"),
-        (LOST, "Lost"),
-    ]

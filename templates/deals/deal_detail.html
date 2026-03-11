@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <h2>Deal: {{ deal.lead.name }}</h2>
+
+    <div class="card p-4 mb-4">
+
+        <p><strong>Value:</strong> ₹{{ deal.value }}</p>
+
+        <p>
+            <strong>Lead:</strong>
+            <a href="{% url 'lead_detail' deal.lead.id %}">
+                {{ deal.lead.name }}
+            </a>
+        </p>
+
+        <p><strong>Stage:</strong> {{ deal.stage.name }}</p>
+
+        <p><strong>Notes:</strong> {{ deal.notes }}</p>
+
+        {% if deal.closed_at %}
+            <p><strong>Closed By:</strong> {{ deal.closed_by }}</p>
+            <p><strong>Closed At:</strong> {{ deal.closed_at }}</p>
+        {% endif %}
+
+    </div>
+
+    <h4>Move Deal Stage</h4>
+
+    <form method="post" action="{% url 'move_deal_stage' deal.id %}">
+        {% csrf_token %}
+
+        <select name="stage_id" class="form-control mb-2">
+
+            {% for stage in stages %}
+                <option value="{{ stage.id }}"
+                        {% if stage.id == deal.stage.id %}selected{% endif %}
+                >
+                    {{ stage.name }}
+                </option>
+            {% endfor %}
+
+        </select>
+
+        <button class="btn btn-primary">
+            Move Stage
+        </button>
+
+    </form>
+
+    <hr>
+
+    <h4>Close Deal</h4>
+
+    <a href="{% url 'close_deal_won' deal.id %}" class="btn btn-success">
+        Close Won
+    </a>
+
+    <a href="{% url 'close_deal_lost' deal.id %}" class="btn btn-danger">
+        Close Lost
+    </a>
+
+    <a href="{% url 'reopen_deal' deal.id %}" class="btn btn-warning">
+        Reopen Deal
+    </a>
+
+{% endblock %}

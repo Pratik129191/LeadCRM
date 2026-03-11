@@ -43,7 +43,9 @@ INSTALLED_APPS = [
     'activities',
     'dashboard',
     'deals',
-    'core'
+    'core',
+
+    'devtools'
 ]
 
 MIDDLEWARE = [

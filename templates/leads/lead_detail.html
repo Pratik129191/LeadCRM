@@ -2,15 +2,26 @@
 
 {% block content %}
     <h2>{{ lead.name }}</h2>
-    
+
     <p><strong>Phone:</strong> {{ lead.phone }}</p>
     <p><strong>Email:</strong> {{ lead.email }}</p>
     <p><strong>Status:</strong> {{ lead.status }}</p>
-    
+
     <hr>
     <a href="{% url 'lead_update' lead.id %}" class="btn btn-warning">
         Edit Lead
     </a>
+
+    {% if not lead.deal %}
+        <a href="{% url 'convert_lead' lead.id %}" class="btn btn-success">
+            Convert To Deal
+        </a>
+    {% else %}
+        <a href="{% url 'deal_detail' lead.deal.id %}" class="btn btn-primary">
+            View Deal
+        </a>
+    {% endif %}
+
     <h4>Add Activity</h4>
 
     <form method="post">

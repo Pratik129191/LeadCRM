@@ -2,7 +2,6 @@ import uuid
 from django.db import models
 
 from accounts.models import Organization, User
-from core.constants import DealStatus
 from leads.models import Lead
 
 
