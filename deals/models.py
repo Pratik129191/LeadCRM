@@ -2,6 +2,7 @@ import uuid
 from django.db import models
 
 from accounts.models import Organization, User
+from core.managers import OrganizationManager
 from leads.models import Lead
 
 
@@ -56,6 +57,8 @@ class DealStage(models.Model):
 
 
 class Deal(models.Model):
+    objects = OrganizationManager()
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,

@@ -4,7 +4,7 @@ from django.db import models
 from accounts.models import Organization, User
 from core.constants import LeadStatus
 from core.managers import OrganizationManager
-
+from core.models import SoftDeleteBaseModel
 
 class BusinessType(models.Model):
     id = models.UUIDField(
@@ -50,7 +50,7 @@ class LeadSource(models.Model):
         unique_together = ['name', 'organization']
 
 
-class Lead(models.Model):
+class Lead(SoftDeleteBaseModel):
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -118,7 +118,6 @@ class Lead(models.Model):
     website = models.URLField(blank=True, null=True)
     google_maps_url = models.URLField(blank=True, null=True)
 
-    is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -11,54 +11,40 @@ from datetime import date
 
 @login_required()
 def dashboard(request):
-    org = request.user.organization
+    org = request.organization
     today = date.today()
 
-    total_leads = Lead.objects.select_related('assigned_to').filter(
-        organization=org,
-        is_deleted=False
+    total_leads = Lead.objects.select_related('assigned_to').for_org(org).active().count()
+
+    interested_leads = Lead.objects.for_org(org).active().filter(
+        status=LeadStatus.INTERESTED
     ).count()
 
-    interested_leads = Lead.objects.filter(
-        organization=org,
-        is_deleted=False,
-    status=LeadStatus.INTERESTED
-    ).count()
-
-    won_leads = Lead.objects.filter(
-        organization=org,
-        is_deleted=False,
+    won_leads = Lead.objects.for_org(org).active().filter(
         status=LeadStatus.WON
     ).count()
 
-    pipeline_value = Lead.objects.filter(
-        organization=org,
-        is_deleted=False,
-    ).aggregate(total=Sum('estimated_value'))['total'] or 0
+    pipeline_value = Lead.objects.for_org(org).active().aggregate(
+        total=Sum('estimated_value')
+    )['total'] or 0
 
-    followups_today = Activity.objects.filter(
-        organization=org,
-        is_deleted=False,
+    followups_today = Activity.objects.for_org(org).active().filter(
         next_follow_up__date=today
     ).count()
 
-    won_revenue = Deal.objects.filter(
-        organization=org,
+    won_revenue = Deal.objects.for_org(org).filter(
         stage__is_won=True
     ).aggregate(total=Sum("value"))["total"] or 0
 
-    open_pipeline_value = Deal.objects.filter(
-        organization=org,
+    open_pipeline_value = Deal.objects.for_org(org).filter(
         stage__is_closed=False
     ).aggregate(total=Sum("value"))["total"] or 0
 
-    won_deals = Deal.objects.filter(
-        organization=org,
+    won_deals = Deal.objects.for_org(org).filter(
         stage__is_won=True
     ).count()
 
-    lost_deals = Deal.objects.filter(
-        organization=org,
+    lost_deals = Deal.objects.for_org(org).filter(
         stage__is_closed=True,
         stage__is_won=False
     ).count()

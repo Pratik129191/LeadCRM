@@ -8,10 +8,10 @@ from accounts.models import User
 @login_required()
 def followups_today(request):
     today = date.today()
-    activities = Activity.objects.filter(
-        next_follow_up__date=today,
-        organization=request.user.organization,
-        is_deleted=False
+    activities = Activity.objects.for_org(
+        request.organization
+    ).active().filter(
+        next_follow_up__date=today
     ).select_related('lead', 'user', 'activity_type')
 
     if request.user.role == User.Role.SALES:
@@ -27,10 +27,10 @@ def followups_today(request):
 @login_required()
 def followups_overdue(request):
     today = date.today()
-    activities = Activity.objects.filter(
-        next_follow_up__date__lt=today,
-        organization=request.user.organization,
-        is_deleted=False
+    activities = Activity.objects.for_org(
+        request.organization
+    ).active().filter(
+        next_follow_up__date__lt=today
     ).select_related('lead', 'user', 'activity_type')
 
     if request.user.role == User.Role.SALES:

@@ -29,5 +29,5 @@ class LeadAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        return qs.filter(organization=request.user.organization)
+        return qs.filter(organization=request.organization)
 

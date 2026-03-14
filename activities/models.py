@@ -5,6 +5,8 @@ from accounts.models import Organization
 from leads.models import Lead
 from accounts.models import User
 from core.constants import LeadStatus
+from core.models import SoftDeleteBaseModel
+from core.managers import OrganizationManager
 
 
 class ActivityType(models.Model):
@@ -45,7 +47,8 @@ class ActivityType(models.Model):
         return self.name
 
 
-class Activity(models.Model):
+class Activity(SoftDeleteBaseModel):
+    objects = OrganizationManager()
 
     id = models.UUIDField(
         primary_key=True,
@@ -88,8 +91,6 @@ class Activity(models.Model):
     )
 
     is_completed = models.BooleanField(default=False)
-
-    is_deleted = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(
         auto_now_add=True,

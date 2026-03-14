@@ -2,8 +2,8 @@ from django.utils import timezone
 from django.db import transaction
 
 from deals.models import Deal, DealStage
-from leads.models import Lead
-from core.constants import LeadStatus
+from core.services.audit_service import log_event
+from core.constants import LeadStatus, AuditAction, AuditEntity
 
 
 def get_first_stage(organization):
@@ -30,13 +30,25 @@ def convert_lead_to_deal(lead, user):
         value=lead.estimated_value or 0,
     )
 
+    log_event(
+        organization=lead.organization,
+        user=user,
+        action=AuditAction.DEAL_CREATED,
+        entity_type=AuditEntity.DEAL,
+        entity_id=deal.id,
+        metadata={
+            "lead_id": str(lead.id),
+            "stage": stage.name
+        }
+    )
+
     lead.status = LeadStatus.INTERESTED
     lead.save(update_fields=["status"])
 
     return deal
 
 
-def move_deal_stage(deal, stage):
+def move_deal_stage(deal, stage, user=None):
 
     if deal.stage.is_closed:
         raise ValueError("Closed deal cannot move")
@@ -46,6 +58,17 @@ def move_deal_stage(deal, stage):
 
     deal.stage = stage
     deal.save(update_fields=["stage"])
+
+    log_event(
+        organization=deal.organization,
+        user=user,
+        action=AuditAction.DEAL_CREATED,
+        entity_type=AuditEntity.DEAL,
+        entity_id=deal.id,
+        metadata={
+            "new_stage": stage.name,
+        }
+    )
 
 
 def close_deal_won(deal, user):
@@ -65,6 +88,14 @@ def close_deal_won(deal, user):
 
     deal.save(update_fields=["stage", "closed_by", "closed_at"])
 
+    log_event(
+        organization=deal.organization,
+        user=user,
+        action=AuditAction.DEAL_WON,
+        entity_type=AuditEntity.DEAL,
+        entity_id=deal.id
+    )
+
 
 def close_deal_lost(deal, user):
 
@@ -83,8 +114,16 @@ def close_deal_lost(deal, user):
 
     deal.save(update_fields=["stage", "closed_by", "closed_at"])
 
+    log_event(
+        organization=deal.organization,
+        user=user,
+        action=AuditAction.DEAL_LOST,
+        entity_type=AuditEntity.DEAL,
+        entity_id=deal.id
+    )
 
-def reopen_deal(deal):
+
+def reopen_deal(deal, user=None):
 
     if not deal.stage.is_closed:
         return
@@ -96,3 +135,11 @@ def reopen_deal(deal):
     deal.closed_by = None
 
     deal.save(update_fields=["stage", "closed_at", "closed_by"])
+
+    log_event(
+        organization=deal.organization,
+        user=user,
+        action=AuditAction.DEAL_REOPENED,
+        entity_type=AuditEntity.DEAL,
+        entity_id=deal.id
+    )

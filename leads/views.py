@@ -6,10 +6,11 @@ from django.db.models import Q
 from activities.models import Activity
 from accounts.models import User
 from activities.forms import ActivityForm
-from core.constants import LeadStatus
+from core.constants import LeadStatus, AuditAction, AuditEntity
+from core.services.audit_service import log_event
 from .forms import LeadForm
 from .models import Lead
-from leads.services.pipeline_service import update_lead_status_from_activity
+from .services.pipeline_service import update_lead_status_from_activity
 
 
 @login_required()
@@ -17,17 +18,11 @@ def lead_list(request):
     query = request.GET.get('q')
 
     if request.user.role == User.Role.SALES:
-        leads = Lead.objects.filter(
-            organization=request.user.organization,
-            is_deleted=False,
-        ).filter(
+        leads = Lead.objects.for_org(request.organization).active().filter(
             Q(assigned_to=request.user) | Q(assigned_to__isnull=True)
         )
     else:
-        leads = Lead.objects.filter(
-            organization=request.user.organization,
-            is_deleted=False,
-        )
+        leads = Lead.objects.for_org(request.organization).active()
 
     # for search filed
     if query:
@@ -58,19 +53,17 @@ def lead_list(request):
 @login_required()
 def lead_detail(request, pk):
     lead = get_object_or_404(
-        Lead,
-        pk=pk,
-        is_deleted=False,
-        organization=request.user.organization
+        Lead.objects.for_org(request.organization).active(),
+        pk=pk
     )
 
     # Sales users can only access their leads
     if request.user.role == User.Role.SALES and lead.assigned_to != request.user:
         return redirect("lead_list")
 
-    activities = lead.activities.filter(
-        is_deleted=False
-    ).select_related('user', 'activity_type').order_by('-created_at')
+    activities = Activity.objects.for_org(request.organization).active().filter(
+        lead=lead,
+    ).select_related('user', 'activity_type').order_by("-created_at")
 
     form = ActivityForm(user=request.user)
 
@@ -80,11 +73,22 @@ def lead_detail(request, pk):
             activity = form.save(commit=False)
             activity.lead = lead
             activity.user = request.user
-            activity.organization = request.user.organization
+            activity.organization = request.organization
 
-            if activity.activity_type.organization != request.user.organization:
+            if activity.activity_type.organization != request.organization:
                 return redirect("lead_detail", pk=lead.pk)
             activity.save()
+            log_event(
+                organization=request.organization,
+                user=request.user,
+                action=AuditAction.ACTIVITY_CREATED,
+                entity_type=AuditEntity.ACTIVITY,
+                entity_id=activity.id,
+                metadata={
+                    "lead_id": str(lead.id),
+                    "activity_type": getattr(activity.activity_type, "name", None)
+                }
+            )
 
             update_lead_status_from_activity(activity)
             return redirect('lead_detail', pk=lead.pk)
@@ -109,12 +113,19 @@ def lead_create(request):
 
         if form.is_valid():
             lead = form.save(commit=False)
-            lead.organization = request.user.organization
+            lead.organization = request.organization
 
             if request.user.role == User.Role.SALES:
                 lead.assigned_to = request.user
 
             lead.save()
+            log_event(
+                organization=request.organization,
+                user=request.user,
+                action=AuditAction.LEAD_CREATED,
+                entity_type=AuditEntity.LEAD,
+                entity_id=lead.id
+            )
             return redirect('lead_list')
     else:
         form = LeadForm(user=request.user)
@@ -129,10 +140,8 @@ def lead_create(request):
 @login_required()
 def lead_update(request, pk):
     lead = get_object_or_404(
-        Lead,
-        pk=pk,
-        is_deleted=False,
-        organization=request.user.organization
+        Lead.objects.for_org(request.organization).active(),
+        pk=pk
     )
 
     if request.user.role == User.Role.SALES and lead.assigned_to != request.user:
@@ -143,6 +152,14 @@ def lead_update(request, pk):
 
         if form.is_valid():
             form.save()
+
+            log_event(
+                organization=request.organization,
+                user=request.user,
+                action=AuditAction.LEAD_UPDATED,
+                entity_type=AuditEntity.LEAD,
+                entity_id=lead.id
+            )
             return redirect('lead_detail', pk=pk)
     else:
         form = LeadForm(instance=lead, user=request.user)
@@ -156,10 +173,7 @@ def lead_update(request, pk):
 
 @login_required()
 def pipeline(request):
-    base_query = Lead.objects.filter(
-        organization=request.user.organization,
-        is_deleted=False
-    ).select_related(
+    base_query = Lead.objects.for_org(request.organization).active().select_related(
         'assigned_to',
         'business_type'
     )

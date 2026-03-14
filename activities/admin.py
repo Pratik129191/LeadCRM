@@ -22,4 +22,4 @@ class ActivityAdmin(admin.ModelAdmin):
         if request.user.is_superuser:
             return qs
 
-        return qs.filter(organization=request.user.organization)
+        return qs.filter(organization=request.organization)

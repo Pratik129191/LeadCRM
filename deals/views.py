@@ -15,15 +15,13 @@ from deals.services.deal_service import (
 @login_required
 def deal_pipeline(request):
 
-    org = request.user.organization
+    org = request.organization
 
     stages = DealStage.objects.filter(
         organization=org
     ).order_by("order")
 
-    deals = Deal.objects.filter(
-        organization=org
-    ).select_related(
+    deals = Deal.objects.for_org(request.organization).select_related(
         "lead",
         "stage"
     )
@@ -48,10 +46,8 @@ def deal_pipeline(request):
 @login_required
 def convert_lead(request, lead_id):
     lead = get_object_or_404(
-        Lead,
-        id=lead_id,
-        organization=request.user.organization,
-        is_deleted=False
+        Lead.objects.for_org(request.organization).active(),
+        id=lead_id
     )
 
     deal = convert_lead_to_deal(lead, request.user)
@@ -61,13 +57,12 @@ def convert_lead(request, lead_id):
 @login_required
 def deal_detail(request, deal_id):
     deal = get_object_or_404(
-        Deal.objects.select_related("lead", "stage"),
-        id=deal_id,
-        organization=request.user.organization
+        Deal.objects.for_org(request.organization).select_related("lead", "stage"),
+        id=deal_id
     )
 
     stages = DealStage.objects.filter(
-        organization=request.user.organization
+        organization=request.organization
     ).order_by("order")
 
     context = {
@@ -85,9 +80,8 @@ def deal_detail(request, deal_id):
 @login_required
 def move_deal_stage_view(request, deal_id):
     deal = get_object_or_404(
-        Deal,
-        id=deal_id,
-        organization=request.user.organization
+        Deal.objects.for_org(request.organization),
+        id=deal_id
     )
 
     stage_id = request.POST.get("stage_id")
@@ -95,10 +89,10 @@ def move_deal_stage_view(request, deal_id):
     stage = get_object_or_404(
         DealStage,
         id=stage_id,
-        organization=request.user.organization
+        organization=request.organization
     )
 
-    move_deal_stage(deal, stage)
+    move_deal_stage(deal, stage, user=request.user)
 
     return redirect("deal_detail", deal_id=deal.id)
 
@@ -106,9 +100,8 @@ def move_deal_stage_view(request, deal_id):
 @login_required
 def close_deal_won_view(request, deal_id):
     deal = get_object_or_404(
-        Deal,
-        id=deal_id,
-        organization=request.user.organization
+        Deal.objects.for_org(request.organization),
+        id=deal_id
     )
     close_deal_won(deal, request.user)
     return redirect("deal_detail", deal_id=deal.id)
@@ -117,9 +110,8 @@ def close_deal_won_view(request, deal_id):
 @login_required
 def close_deal_lost_view(request, deal_id):
     deal = get_object_or_404(
-        Deal,
-        id=deal_id,
-        organization=request.user.organization
+        Deal.objects.for_org(request.organization),
+        id=deal_id
     )
     close_deal_lost(deal, request.user)
     return redirect("deal_detail", deal_id=deal.id)
@@ -128,9 +120,8 @@ def close_deal_lost_view(request, deal_id):
 @login_required
 def reopen_deal_view(request, deal_id):
     deal = get_object_or_404(
-        Deal,
-        id=deal_id,
-        organization=request.user.organization
+        Deal.objects.for_org(request.organization),
+        id=deal_id
     )
-    reopen_deal(deal)
+    reopen_deal(deal, user=request.user)
     return redirect("deal_detail", deal_id=deal.id)
