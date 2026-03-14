@@ -18,11 +18,11 @@ def lead_list(request):
     query = request.GET.get('q')
 
     if request.user.role == User.Role.SALES:
-        leads = Lead.objects.for_org(request.organization).active().filter(
+        leads = Lead.objects.active().filter(
             Q(assigned_to=request.user) | Q(assigned_to__isnull=True)
         )
     else:
-        leads = Lead.objects.for_org(request.organization).active()
+        leads = Lead.objects.active()
 
     # for search filed
     if query:
@@ -31,7 +31,7 @@ def lead_list(request):
             Q(email__icontains=query) |
             Q(phone__icontains=query)
         )
-    leads = leads.order_by('-created_at').select_related('assigned_to', 'business_type')
+    leads = leads.order_by('-created_at').select_related('assigned_to', 'business_type', 'source')
 
     paginator = Paginator(leads, 20)
     page_number = request.GET.get('page')
@@ -53,7 +53,7 @@ def lead_list(request):
 @login_required()
 def lead_detail(request, pk):
     lead = get_object_or_404(
-        Lead.objects.for_org(request.organization).active(),
+        Lead.objects.active(),
         pk=pk
     )
 
@@ -61,9 +61,9 @@ def lead_detail(request, pk):
     if request.user.role == User.Role.SALES and lead.assigned_to != request.user:
         return redirect("lead_list")
 
-    activities = Activity.objects.for_org(request.organization).active().filter(
+    activities = Activity.objects.active().filter(
         lead=lead,
-    ).select_related('user', 'activity_type').order_by("-created_at")
+    ).select_related('user', 'activity_type', 'lead').order_by("-created_at")
 
     form = ActivityForm(user=request.user)
 
@@ -140,7 +140,7 @@ def lead_create(request):
 @login_required()
 def lead_update(request, pk):
     lead = get_object_or_404(
-        Lead.objects.for_org(request.organization).active(),
+        Lead.objects.active(),
         pk=pk
     )
 
@@ -173,7 +173,7 @@ def lead_update(request, pk):
 
 @login_required()
 def pipeline(request):
-    base_query = Lead.objects.for_org(request.organization).active().select_related(
+    base_query = Lead.objects.active().select_related(
         'assigned_to',
         'business_type'
     )

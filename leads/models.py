@@ -28,6 +28,7 @@ class BusinessType(models.Model):
     class Meta:
         unique_together = ['name', 'organization']
 
+
 class LeadSource(models.Model):
     id = models.UUIDField(
         primary_key=True,
@@ -133,6 +134,7 @@ class Lead(SoftDeleteBaseModel):
             models.Index(fields=['organization', 'created_at']),
             models.Index(fields=['organization', 'status', 'created_at']),
             models.Index(fields=['organization', 'assigned_to', 'status']),
+            models.Index(fields=['organization', 'status', 'assigned_to'])
         ]
 
     def __str__(self):

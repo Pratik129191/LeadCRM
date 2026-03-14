@@ -1,71 +1,69 @@
+from datetime import date
+
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum
+from django.db.models import Sum, Count, Q
+from django.core.cache import cache
 from django.shortcuts import render
 
 from leads.models import Lead
 from core.constants import LeadStatus
 from activities.models import Activity
 from deals.models import Deal
-from datetime import date
 
 
 @login_required()
 def dashboard(request):
-    org = request.organization
+    org_id = str(request.organization.id)
+    cache_key = f"dashboard_metrics_{org_id}"
+    cached_data = cache.get(cache_key)
+
+    if cached_data:
+        return render(
+            request,
+            'dashboard/dashboard.html',
+            cached_data
+        )
+
     today = date.today()
 
-    total_leads = Lead.objects.select_related('assigned_to').for_org(org).active().count()
+    # -------- LEAD STATS (single query) --------
+    lead_stats = Lead.objects.active().aggregate(
+        total=Count("id"),
+        interested=Count("id", filter=Q(status=LeadStatus.INTERESTED)),
+        won=Count("id", filter=Q(status=LeadStatus.WON)),
+        pipeline_value=Sum("estimated_value"),
+    )
 
-    interested_leads = Lead.objects.for_org(org).active().filter(
-        status=LeadStatus.INTERESTED
-    ).count()
-
-    won_leads = Lead.objects.for_org(org).active().filter(
-        status=LeadStatus.WON
-    ).count()
-
-    pipeline_value = Lead.objects.for_org(org).active().aggregate(
-        total=Sum('estimated_value')
-    )['total'] or 0
-
-    followups_today = Activity.objects.for_org(org).active().filter(
+    # -------- FOLLOWUPS TODAY --------
+    followups_today = Activity.objects.active().filter(
         next_follow_up__date=today
     ).count()
 
-    won_revenue = Deal.objects.for_org(org).filter(
-        stage__is_won=True
-    ).aggregate(total=Sum("value"))["total"] or 0
-
-    open_pipeline_value = Deal.objects.for_org(org).filter(
-        stage__is_closed=False
-    ).aggregate(total=Sum("value"))["total"] or 0
-
-    won_deals = Deal.objects.for_org(org).filter(
-        stage__is_won=True
-    ).count()
-
-    lost_deals = Deal.objects.for_org(org).filter(
-        stage__is_closed=True,
-        stage__is_won=False
-    ).count()
+    # -------- DEAL STATS (single query) --------
+    deal_stats = Deal.objects.aggregate(
+        won_revenue=Sum("value", filter=Q(stage__is_won=True)),
+        open_pipeline_value=Sum("value", filter=Q(stage__is_closed=False)),
+        won_deals=Count("id", filter=Q(stage__is_won=True)),
+        lost_deals=Count("id", filter=Q(stage__is_closed=True, stage__is_won=False)),
+    )
 
     context = {
-        'total_leads': total_leads,
-        'interested_leads': interested_leads,
-        'won_leads': won_leads,
-        'pipeline_value': pipeline_value,
-        'followups_today': followups_today,
-        "won_revenue": won_revenue,
-        "open_pipeline_value": open_pipeline_value,
-        "won_deals": won_deals,
-        "lost_deals": lost_deals,
+        "total_leads": lead_stats["total"] or 0,
+        "interested_leads": lead_stats["interested"] or 0,
+        "won_leads": lead_stats["won"] or 0,
+        "pipeline_value": lead_stats["pipeline_value"] or 0,
+        "followups_today": followups_today,
+        "won_revenue": deal_stats["won_revenue"] or 0,
+        "open_pipeline_value": deal_stats["open_pipeline_value"] or 0,
+        "won_deals": deal_stats["won_deals"] or 0,
+        "lost_deals": deal_stats["lost_deals"] or 0,
     }
+
+    cache.set(cache_key, context, 60)
 
     return render(
         request,
-        'dashboard/dashboard.html',
+        "dashboard/dashboard.html",
         context
     )
-
-
 

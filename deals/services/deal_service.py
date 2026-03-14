@@ -62,7 +62,7 @@ def move_deal_stage(deal, stage, user=None):
     log_event(
         organization=deal.organization,
         user=user,
-        action=AuditAction.DEAL_CREATED,
+        action=AuditAction.DEAL_STAGE_CHANGED,
         entity_type=AuditEntity.DEAL,
         entity_id=deal.id,
         metadata={

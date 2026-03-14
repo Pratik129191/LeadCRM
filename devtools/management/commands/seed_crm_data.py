@@ -9,6 +9,7 @@ from leads.models import Lead, BusinessType, LeadSource
 from activities.models import Activity, ActivityType
 from deals.models import DealStage, Deal
 from core.constants import LeadStatus
+from core.tenant_context import set_current_organization
 
 
 FIRST_NAMES = [
@@ -53,6 +54,8 @@ class Command(BaseCommand):
             name="Demo CRM Organization",
             owner=admin
         )
+
+        set_current_organization(org)
 
         admin.organization = org
         admin.save(update_fields=["organization"])
