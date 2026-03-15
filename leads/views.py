@@ -6,8 +6,12 @@ from django.db.models import Q
 from activities.models import Activity
 from accounts.models import User
 from activities.forms import ActivityForm
+
+from core.events.event_bus import emit
+from core.events.events import EventTypes
 from core.constants import LeadStatus, AuditAction, AuditEntity
 from core.services.audit_service import log_event
+from core.services.timeline_service import get_lead_timeline
 from .forms import LeadForm
 from .models import Lead
 from .services.pipeline_service import update_lead_status_from_activity
@@ -61,9 +65,7 @@ def lead_detail(request, pk):
     if request.user.role == User.Role.SALES and lead.assigned_to != request.user:
         return redirect("lead_list")
 
-    activities = Activity.objects.active().filter(
-        lead=lead,
-    ).select_related('user', 'activity_type', 'lead').order_by("-created_at")
+    timeline = get_lead_timeline(lead)
 
     form = ActivityForm(user=request.user)
 
@@ -78,15 +80,20 @@ def lead_detail(request, pk):
             if activity.activity_type.organization != request.organization:
                 return redirect("lead_detail", pk=lead.pk)
             activity.save()
-            log_event(
-                organization=request.organization,
-                user=request.user,
-                action=AuditAction.ACTIVITY_CREATED,
-                entity_type=AuditEntity.ACTIVITY,
-                entity_id=activity.id,
-                metadata={
-                    "lead_id": str(lead.id),
-                    "activity_type": getattr(activity.activity_type, "name", None)
+
+            emit(
+                event_type=EventTypes.ACTIVITY_CREATED,
+                payload={
+                    "organization": request.organization,
+                    "user": request.user,
+                    "action": AuditAction.ACTIVITY_CREATED,
+                    "lead": lead,
+                    "entity_type": AuditEntity.ACTIVITY,
+                    "entity_id": activity.id,
+                    "metadata": {
+                        "lead_id": str(lead.id),
+                        "activity_type": getattr(activity.activity_type, "name", None)
+                    }
                 }
             )
 
@@ -95,7 +102,7 @@ def lead_detail(request, pk):
 
     context = {
         'lead': lead,
-        'activities': activities,
+        'timeline': timeline,
         'form': form,
     }
 

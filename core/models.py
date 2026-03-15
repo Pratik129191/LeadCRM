@@ -1,9 +1,12 @@
 import uuid
 from django.db import models
 from django.utils import timezone
+from core.managers import OrganizationManager
 
 
 class SaaSBaseModel(models.Model):
+    objects = OrganizationManager()
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -52,24 +55,18 @@ class SoftDeleteBaseModel(models.Model):
         self.save(update_fields=["is_deleted", "deleted_at"])
 
 
-class AuditLog(models.Model):
+class AuditLog(SaaSBaseModel):
     class AuditEntity(models.TextChoices):
         ACTIVITY = "ACTIVITY", "Activity"
         LEAD = "LEAD", "Lead"
         DEAL = "DEAL", "Deal"
         USER = "USER", "User"
 
-
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False
-    )
-
-    organization = models.ForeignKey(
-        "accounts.Organization",
+    lead = models.ForeignKey(
+        "leads.Lead",
         on_delete=models.CASCADE,
-        related_name="audit_logs",
+        null=True,
+        blank=True,
         db_index=True
     )
 
@@ -101,12 +98,8 @@ class AuditLog(models.Model):
         null=True,
     )
 
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        db_index=True
-    )
-
     class Meta:
+        default_related_name = "audit_logs"
         indexes = [
             models.Index(fields=["organization", "created_at"]),
             models.Index(fields=["entity_type", "entity_id"]),

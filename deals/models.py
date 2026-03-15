@@ -3,23 +3,11 @@ from django.db import models
 
 from accounts.models import Organization, User
 from core.managers import OrganizationManager
+from core.models import SaaSBaseModel
 from leads.models import Lead
 
 
-class DealStage(models.Model):
-
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False
-    )
-
-    organization = models.ForeignKey(
-        Organization,
-        on_delete=models.CASCADE,
-        related_name="deal_stages"
-    )
-
+class DealStage(SaaSBaseModel):
     name = models.CharField(
         max_length=100
     )
@@ -38,15 +26,10 @@ class DealStage(models.Model):
         help_text="Marks deal as won"
     )
 
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
-
     class Meta:
+        default_related_name = 'deal_stages'
         ordering = ["order"]
-
         unique_together = ["organization", "name"]
-
         indexes = [
             models.Index(fields=["organization"]),
             models.Index(fields=["organization", "order"]),
@@ -56,21 +39,7 @@ class DealStage(models.Model):
         return self.name
 
 
-class Deal(models.Model):
-    objects = OrganizationManager()
-
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False
-    )
-
-    organization = models.ForeignKey(
-        Organization,
-        on_delete=models.CASCADE,
-        related_name="deals"
-    )
-
+class Deal(SaaSBaseModel):
     lead = models.OneToOneField(
         Lead,
         on_delete=models.CASCADE,
@@ -107,10 +76,8 @@ class Deal(models.Model):
         null=True
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
     class Meta:
+        default_related_name = 'deals'
         indexes = [
             models.Index(fields=['organization']),
             models.Index(fields=['organization', 'stage']),

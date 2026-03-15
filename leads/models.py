@@ -4,66 +4,32 @@ from django.db import models
 from accounts.models import Organization, User
 from core.constants import LeadStatus
 from core.managers import OrganizationManager
-from core.models import SoftDeleteBaseModel
+from core.models import SoftDeleteBaseModel, SaaSBaseModel
 
-class BusinessType(models.Model):
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
 
-    organization = models.ForeignKey(
-        Organization,
-        on_delete=models.CASCADE,
-        related_name='business_types',
-    )
-
+class BusinessType(SaaSBaseModel):
     name = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
 
     class Meta:
+        default_related_name = 'business_types'
         unique_together = ['name', 'organization']
 
 
-class LeadSource(models.Model):
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-    )
-
-    organization = models.ForeignKey(
-        Organization,
-        on_delete=models.CASCADE,
-        related_name='lead_sources',
-    )
-
+class LeadSource(SaaSBaseModel):
     name = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
 
     class Meta:
+        default_related_name = 'lead_sources'
         unique_together = ['name', 'organization']
 
 
-class Lead(SoftDeleteBaseModel):
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
-
-    organization = models.ForeignKey(
-        Organization,
-        on_delete=models.CASCADE,
-        related_name='leads',
-    )
-
+class Lead(SaaSBaseModel, SoftDeleteBaseModel):
     name = models.CharField(max_length=255)
     phone = models.CharField(
         max_length=20,
@@ -119,12 +85,8 @@ class Lead(SoftDeleteBaseModel):
     website = models.URLField(blank=True, null=True)
     google_maps_url = models.URLField(blank=True, null=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    objects = OrganizationManager()
-
     class Meta:
+        default_related_name = 'leads'
         indexes = [
             models.Index(fields=['organization']),
             models.Index(fields=['status']),
@@ -139,3 +101,6 @@ class Lead(SoftDeleteBaseModel):
 
     def __str__(self):
         return self.name
+
+
+

@@ -3,13 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 
 from .models import DealStage, Deal
 from leads.models import Lead
-from deals.services.deal_service import (
-    convert_lead_to_deal,
-    move_deal_stage,
-    close_deal_won,
-    close_deal_lost,
-    reopen_deal
-)
+from deals.services.deal_service import DealService
 
 
 @login_required
@@ -21,7 +15,9 @@ def deal_pipeline(request):
         organization=org
     ).order_by("order")
 
-    deals = Deal.objects.select_related(
+    deals = Deal.objects.filter(
+        organization=org
+    ).select_related(
         "lead",
         "stage",
         "lead__assigned_to",
@@ -51,7 +47,7 @@ def convert_lead(request, lead_id):
         id=lead_id
     )
 
-    deal = convert_lead_to_deal(lead, request.user)
+    deal = DealService.convert_lead(lead, request.user)
     return redirect('deal_detail', deal.id)
 
 
@@ -92,7 +88,7 @@ def move_deal_stage_view(request, deal_id):
         id=stage_id
     )
 
-    move_deal_stage(deal, stage, user=request.user)
+    DealService.move_stage(deal, stage, user=request.user)
 
     return redirect("deal_detail", deal_id=deal.id)
 
@@ -103,7 +99,7 @@ def close_deal_won_view(request, deal_id):
         Deal.objects,
         id=deal_id
     )
-    close_deal_won(deal, request.user)
+    DealService.close_won(deal, request.user)
     return redirect("deal_detail", deal_id=deal.id)
 
 
@@ -113,7 +109,7 @@ def close_deal_lost_view(request, deal_id):
         Deal.objects,
         id=deal_id
     )
-    close_deal_lost(deal, request.user)
+    DealService.close_lost(deal, request.user)
     return redirect("deal_detail", deal_id=deal.id)
 
 
@@ -123,5 +119,5 @@ def reopen_deal_view(request, deal_id):
         Deal.objects,
         id=deal_id
     )
-    reopen_deal(deal, user=request.user)
+    DealService.reopen(deal, user=request.user)
     return redirect("deal_detail", deal_id=deal.id)

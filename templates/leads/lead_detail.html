@@ -33,22 +33,33 @@
     <hr>
     <h4>Activity Timeline</h4>
 
-    {% for activity in activities %}
+    {% for item in timeline %}
         <div class="card mb-2">
             <div class="card-body">
-                <strong>{{ activity.activity_type }}</strong>
+            {% if item.activity_type %}
+                <strong>{{ item.activity_type }}</strong>
                 <br>
-                {{ activity.note }}
+                {{ item.note }}
                 <br><br>
                 <small>
-                    By {{ activity.user }} |
-                    {{ activity.created_at }}
+                    By {{ item.user }} |
+                    {{ item.created_at }}
                 </small>
-                {% if activity.next_follow_up %}
-                    <div class="text-danger">
-                        Follow up on: {{ activity.next_follow_up }}
-                    </div>
-                {% endif %}
+            {% else %}
+                <strong>System Event</strong>
+                <br>
+                {{ item.action }}
+                <br><br>
+                <small>
+                    {{ item.created_at }}
+                </small>
+            {% endif %}
+
+            {% if item.next_follow_up %}
+                <div class="text-danger">
+                    Follow up on: {{ item.next_follow_up }}
+                </div>
+            {% endif %}
             </div>
         </div>
     {% endfor %}

@@ -7,6 +7,7 @@ def log_event(
         action,
         entity_type,
         entity_id,
+        lead=None,
         metadata=None,
 ):
     AuditLog.objects.create(
@@ -15,6 +16,7 @@ def log_event(
         action=action,
         entity_type=entity_type,
         entity_id=entity_id,
+        lead=lead,
         metadata=metadata or {},
     )
 

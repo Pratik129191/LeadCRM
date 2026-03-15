@@ -14,7 +14,7 @@ from deals.models import Deal
 @login_required()
 def dashboard(request):
     org_id = str(request.organization.id)
-    cache_key = f"dashboard_metrics_{org_id}"
+    cache_key = f"org:{org_id}:dashboard"
     cached_data = cache.get(cache_key)
 
     if cached_data:
@@ -40,7 +40,9 @@ def dashboard(request):
     ).count()
 
     # -------- DEAL STATS (single query) --------
-    deal_stats = Deal.objects.aggregate(
+    deal_stats = Deal.objects.filter(
+        organization=request.organization
+    ).aggregate(
         won_revenue=Sum("value", filter=Q(stage__is_won=True)),
         open_pipeline_value=Sum("value", filter=Q(stage__is_closed=False)),
         won_deals=Count("id", filter=Q(stage__is_won=True)),

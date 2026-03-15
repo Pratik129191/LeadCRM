@@ -28,6 +28,13 @@ class OrganizationManager(models.Manager):
         return query_set.filter(organization=organization)
 
     def for_org(self, organization):
+        if not is_system_mode():
+            current_org = get_current_organization()
+
+            if current_org != organization:
+                raise TenantIsolationError(
+                    f"Cross-tenant query blocked for {self.model.__name__}"
+                )
         return OrganizationQuerySet(self.model, using=self._db).filter(
             organization=organization
         )
