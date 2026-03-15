@@ -9,9 +9,13 @@ from activities.forms import ActivityForm
 
 from core.events.event_bus import emit
 from core.events.events import EventTypes
-from core.constants import LeadStatus, AuditAction, AuditEntity
+from core.constants import LeadStatus, AuditAction, EntityType
 from core.services.audit_service import log_event
 from core.services.timeline_service import get_lead_timeline
+
+from notes.forms import NoteForm
+from notes.services.note_service import NoteService
+
 from .forms import LeadForm
 from .models import Lead
 from .services.pipeline_service import update_lead_status_from_activity
@@ -68,8 +72,21 @@ def lead_detail(request, pk):
     timeline = get_lead_timeline(lead)
 
     form = ActivityForm(user=request.user)
+    note_form = NoteForm()
 
     if request.method == 'POST':
+        if "add_note" in request.POST:
+            note_form = NoteForm(request.POST)
+
+            if note_form.is_valid():
+                NoteService.create_note(
+                    organization=request.organization,
+                    user=request.user,
+                    content=note_form.cleaned_data['content'],
+                    lead=lead
+                )
+                return redirect("lead_detail", pk=lead.pk)
+
         form = ActivityForm(request.POST, user=request.user)
         if form.is_valid():
             activity = form.save(commit=False)
@@ -88,7 +105,7 @@ def lead_detail(request, pk):
                     "user": request.user,
                     "action": AuditAction.ACTIVITY_CREATED,
                     "lead": lead,
-                    "entity_type": AuditEntity.ACTIVITY,
+                    "entity_type": EntityType.ACTIVITY,
                     "entity_id": activity.id,
                     "metadata": {
                         "lead_id": str(lead.id),
@@ -104,6 +121,7 @@ def lead_detail(request, pk):
         'lead': lead,
         'timeline': timeline,
         'form': form,
+        'note_form': note_form,
     }
 
     return render(
@@ -130,7 +148,7 @@ def lead_create(request):
                 organization=request.organization,
                 user=request.user,
                 action=AuditAction.LEAD_CREATED,
-                entity_type=AuditEntity.LEAD,
+                entity_type=EntityType.LEAD,
                 entity_id=lead.id
             )
             return redirect('lead_list')
@@ -164,7 +182,7 @@ def lead_update(request, pk):
                 organization=request.organization,
                 user=request.user,
                 action=AuditAction.LEAD_UPDATED,
-                entity_type=AuditEntity.LEAD,
+                entity_type=EntityType.LEAD,
                 entity_id=lead.id
             )
             return redirect('lead_detail', pk=pk)

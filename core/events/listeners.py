@@ -1,5 +1,5 @@
 from core.services.audit_service import log_event
-from core.constants import AuditEntity
+from core.constants import EntityType
 
 
 def audit_listener(event):

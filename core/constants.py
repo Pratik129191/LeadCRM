@@ -33,9 +33,20 @@ class AuditAction:
     DEAL_REOPENED = "DEAL_REOPENED"
 
 
-class AuditEntity:
+class EntityType:
     LEAD = "LEAD"
     ACTIVITY = "ACTIVITY"
     DEAL = "DEAL"
     USER = "USER"
+    TASK = "TASK"
+    NOTE = "NOTE"
+
+    CHOICES = [
+        (LEAD, "Lead"),
+        (ACTIVITY, "Activity"),
+        (DEAL, "Deal"),
+        (USER, "User"),
+        (TASK, "Task"),
+        (NOTE, "Note"),
+    ]
 

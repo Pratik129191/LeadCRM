@@ -4,7 +4,8 @@ from operator import attrgetter
 from activities.models import Activity
 from leads.models import Lead
 from core.models import AuditLog
-from core.constants import AuditEntity
+from core.constants import EntityType
+from notes.models import Note
 
 
 def get_lead_timeline(lead: Lead):
@@ -26,7 +27,11 @@ def get_lead_timeline(lead: Lead):
         lead=lead,
     )
 
-    timeline = list(chain(activities, audit_logs))
+    notes = Note.objects.filter(
+        lead=lead,
+    ).select_related("user")
+
+    timeline = list(chain(activities, audit_logs, notes))
     timeline.sort(key=attrgetter('created_at'), reverse=True)
 
     return timeline

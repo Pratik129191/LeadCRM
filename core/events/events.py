@@ -19,3 +19,6 @@ class EventTypes:
     # Notification events
     NOTIFICATION_CREATED = "NOTIFICATION_CREATED"
 
+    # Note events
+    NOTE_CREATED = "NOTE_CREATED"
+

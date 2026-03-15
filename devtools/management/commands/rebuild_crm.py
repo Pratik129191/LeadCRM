@@ -21,7 +21,8 @@ class Command(BaseCommand):
             "leads",
             "activities",
             "deals",
-            "tasks"
+            "tasks",
+            "notifications"
         ]
 
         self.stdout.write(self.style.WARNING("\nRebuilding CRM...\n"))

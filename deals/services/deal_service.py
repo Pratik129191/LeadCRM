@@ -3,7 +3,7 @@ from django.db import transaction
 
 from deals.models import Deal, DealStage
 
-from core.constants import LeadStatus, AuditAction, AuditEntity
+from core.constants import LeadStatus, AuditAction, EntityType
 from core.events.events import EventTypes
 from core.events.event_bus import emit
 
@@ -42,7 +42,7 @@ class DealService:
                 "user": user,
                 "lead": lead,
                 "action": AuditAction.DEAL_CREATED,
-                "entity_type": AuditEntity.DEAL,
+                "entity_type": EntityType.DEAL,
                 "entity_id": deal.id,
                 "metadata": {
                     "lead_id": str(lead.id),
@@ -78,7 +78,7 @@ class DealService:
                 "user": user,
                 "action": AuditAction.DEAL_STAGE_CHANGED,
                 "lead": deal.lead,
-                "entity_type": AuditEntity.DEAL,
+                "entity_type": EntityType.DEAL,
                 "entity_id": deal.id,
                 "metadata": {
                     "new_stage": stage.name
@@ -111,7 +111,7 @@ class DealService:
                 "user": user,
                 "action": AuditAction.DEAL_WON,
                 "lead": deal.lead,
-                "entity_type": AuditEntity.DEAL,
+                "entity_type": EntityType.DEAL,
                 "entity_id": deal.id
             }
         )
@@ -141,7 +141,7 @@ class DealService:
                 "user": user,
                 "action": AuditAction.DEAL_LOST,
                 "lead": deal.lead,
-                "entity_type": AuditEntity.DEAL,
+                "entity_type": EntityType.DEAL,
                 "entity_id": deal.id
             }
         )
@@ -167,7 +167,7 @@ class DealService:
                 "user": user,
                 "action": AuditAction.DEAL_REOPENED,
                 "lead": deal.lead,
-                "entity_type": AuditEntity.DEAL,
+                "entity_type": EntityType.DEAL,
                 "entity_id": deal.id,
             }
         )
