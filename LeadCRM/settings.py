@@ -48,6 +48,11 @@ INSTALLED_APPS = [
     'deals',
     'core',
 
+    'tasks',
+    'notes',
+    'rules',
+    'notifications',
+
     'devtools'
 ]
 

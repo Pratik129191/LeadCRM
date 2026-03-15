@@ -22,9 +22,8 @@ class OrganizationManager(models.Manager):
 
         organization = get_current_organization()
         if organization is None:
-            raise TenantIsolationError(
-                f"{self.model.__name__} accessed without organization context"
-            )
+            return query_set.none()
+
         return query_set.filter(organization=organization)
 
     def for_org(self, organization):

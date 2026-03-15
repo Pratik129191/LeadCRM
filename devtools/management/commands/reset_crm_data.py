@@ -5,16 +5,24 @@ from accounts.models import Organization, User
 from leads.models import Lead, BusinessType, LeadSource
 from activities.models import Activity, ActivityType
 from deals.models import Deal, DealStage
+from core.models import AuditLog
 from core.tenant_context import set_system_mode, clear_system_mode
 
 
 class Command(BaseCommand):
-    help = "Delete all CRM demo data"
+
+    help = "Reset all CRM demo data"
 
     @transaction.atomic
     def handle(self, *args, **kwargs):
+
         set_system_mode()
+
         try:
+
+            self.stdout.write("Deleting Audit Logs...")
+            AuditLog.objects.all().delete()
+
             self.stdout.write("Deleting Activities...")
             Activity.objects.all().delete()
 
@@ -45,7 +53,8 @@ class Command(BaseCommand):
         finally:
             clear_system_mode()
 
+        self.stdout.write(self.style.SUCCESS("CRM database reset complete"))
 
-        self.stdout.write(self.style.SUCCESS("Database reset complete"))
+
 
 

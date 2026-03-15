@@ -1,17 +1,18 @@
 from django.apps import AppConfig
 
-from leads.services.scoring_listener import lead_scoring_listener
-
-from .events.event_bus import register
-from .events.listeners import audit_listener
-from .events.events import EventTypes
-
 
 
 class CoreConfig(AppConfig):
     name = 'core'
 
     def ready(self):
+
+        # --------------- importing here to avoid AppRegistryNotReady ---------------
+        from .events.event_bus import register
+        from .events.listeners import audit_listener
+        from .events.events import EventTypes
+        from leads.services.scoring_listener import lead_scoring_listener
+
         # --------------- Audit Log Listeners ---------------
         register(EventTypes.LEAD_CREATED, audit_listener)
         register(EventTypes.ACTIVITY_CREATED, audit_listener)

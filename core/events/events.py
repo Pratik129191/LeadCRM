@@ -1,4 +1,5 @@
 class EventTypes:
+    # Audit events
     LEAD_CREATED = 'LEAD_CREATED'
     ACTIVITY_CREATED = 'ACTIVITY_CREATED'
 
@@ -8,5 +9,13 @@ class EventTypes:
     DEAL_WON = 'DEAL_WON'
     DEAL_LOST = 'DEAL_LOST'
 
+    # Task events
+    TASK_CREATED = "TASK_CREATED"
+    TASK_COMPLETED = "TASK_COMPLETED"
 
+    # Reminder events
+    REMINDER_TRIGGERED = "REMINDER_TRIGGERED"
+
+    # Notification events
+    NOTIFICATION_CREATED = "NOTIFICATION_CREATED"
 

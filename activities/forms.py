@@ -3,6 +3,9 @@ from .models import Activity, ActivityType
 
 
 class ActivityForm(forms.ModelForm):
+    activity_type = forms.ModelChoiceField(
+        queryset=ActivityType.objects.none()
+    )
 
     class Meta:
         model = Activity

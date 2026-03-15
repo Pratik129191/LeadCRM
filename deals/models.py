@@ -26,6 +26,11 @@ class DealStage(SaaSBaseModel):
         help_text="Marks deal as won"
     )
 
+    probability = models.PositiveIntegerField(
+        default=10,
+        help_text="Probability of closing this stage (0-100)"
+    )
+
     class Meta:
         default_related_name = 'deal_stages'
         ordering = ["order"]

@@ -16,7 +16,9 @@ class BusinessType(SaaSBaseModel):
     class Meta:
         default_related_name = 'business_types'
         unique_together = ['name', 'organization']
-
+        indexes = [
+            models.Index(fields=['organization']),
+        ]
 
 class LeadSource(SaaSBaseModel):
     name = models.CharField(max_length=100)
@@ -27,7 +29,9 @@ class LeadSource(SaaSBaseModel):
     class Meta:
         default_related_name = 'lead_sources'
         unique_together = ['name', 'organization']
-
+        indexes = [
+            models.Index(fields=['organization']),
+        ]
 
 class Lead(SaaSBaseModel, SoftDeleteBaseModel):
     name = models.CharField(max_length=255)

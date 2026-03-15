@@ -6,9 +6,13 @@ from django.core.cache import cache
 from django.shortcuts import render
 
 from leads.models import Lead
+
 from core.constants import LeadStatus
+
 from activities.models import Activity
+
 from deals.models import Deal
+from deals.services.forecast_service import ForecastService
 
 
 @login_required()
@@ -56,6 +60,9 @@ def dashboard(request):
         "assigned_to"
     )[:5]
 
+    # -------- FORECAST PIPELINE --------
+    expected_pipeline = ForecastService.pipeline_expected_revenue(request.organization)
+
     context = {
         "total_leads": lead_stats["total"] or 0,
         "interested_leads": lead_stats["interested"] or 0,
@@ -67,6 +74,7 @@ def dashboard(request):
         "won_deals": deal_stats["won_deals"] or 0,
         "lost_deals": deal_stats["lost_deals"] or 0,
         "top_leads": top_leads,
+        "expected_pipeline": expected_pipeline
     }
 
     cache.set(cache_key, context, 60)

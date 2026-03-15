@@ -1,5 +1,7 @@
 import random
 from decimal import Decimal
+from datetime import timedelta
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
@@ -8,8 +10,13 @@ from accounts.models import User, Organization
 from leads.models import Lead, BusinessType, LeadSource
 from activities.models import Activity, ActivityType
 from deals.models import DealStage, Deal
+
 from core.constants import LeadStatus
-from core.tenant_context import set_current_organization
+from core.tenant_context import (
+    set_current_organization,
+    set_system_mode,
+    clear_system_mode
+)
 
 
 FIRST_NAMES = [
@@ -34,201 +41,234 @@ NOTES = [
 
 class Command(BaseCommand):
 
-    help = "Create a large realistic CRM demo dataset"
+    help = "Generate realistic CRM dataset for testing"
+    set_system_mode()
 
     @transaction.atomic
     def handle(self, *args, **kwargs):
-
-        self.stdout.write("Creating admin user...")
-
-        admin = User.objects.create_user(
-            username="admin",
-            password="Admin@123",
-            role=User.Role.ADMIN,
-            is_staff=True,
-            is_superuser=True,
-            is_active_member=True
-        )
-
-        org = Organization.objects.create(
-            name="Demo CRM Organization",
-            owner=admin
-        )
-
-        set_current_organization(org)
-
-        admin.organization = org
-        admin.save(update_fields=["organization"])
-
-        # SALES USERS
-        self.stdout.write("Creating sales team...")
-
-        sales_users = []
-
-        for i in range(8):
-
-            user = User.objects.create_user(
-                username=f"sales{i}",
-                password="Sales@123",
-                role=User.Role.SALES,
-                organization=org,
-                is_active_member=True
+        try:
+            # ---------------- ADMIN ----------------
+            admin, created = User.objects.get_or_create(
+                username="admin",
+                defaults={
+                    "role": User.Role.ADMIN,
+                    "is_staff": True,
+                    "is_superuser": True,
+                    "is_active_member": True
+                }
             )
 
-            sales_users.append(user)
+            if created:
+                admin.set_password("Admin@123")
+                admin.save()
 
-        # BUSINESS TYPES
-        bt_names = [
-            "Restaurant","Retail","Gym","Hospital",
-            "Real Estate","School","Salon","Clinic",
-            "Hotel","Startup"
-        ]
+            # ---------------- ORGANIZATION ----------------
 
-        business_types = [
-            BusinessType.objects.create(name=name, organization=org)
-            for name in bt_names
-        ]
+            org, _ = Organization.objects.get_or_create(
+                owner=admin,
+                name="Demo CRM Organization"
+            )
 
-        # SOURCES
-        source_names = [
-            "Facebook Ads",
-            "Google Ads",
-            "Website",
-            "Cold Call",
-            "LinkedIn",
-            "Referral",
-            "Trade Show",
-            "Instagram"
-        ]
+            set_current_organization(org)
 
-        sources = [
-            LeadSource.objects.create(name=name, organization=org)
-            for name in source_names
-        ]
+            admin.organization = org
+            admin.save(update_fields=["organization"])
 
-        # ACTIVITY TYPES
-        activity_types_data = [
-            ("Call", True, LeadStatus.CALLED),
-            ("Follow Up", True, LeadStatus.FOLLOW_UP),
-            ("Interested", True, LeadStatus.INTERESTED),
-            ("Proposal Sent", True, LeadStatus.PROPOSAL_SENT),
-            ("Negotiation", False, None),
-            ("Meeting", False, None),
-            ("Note", False, None),
-        ]
+            self.stdout.write("Admin + Organization ready")
 
-        activity_types = []
+            # ---------------- SALES TEAM ----------------
 
-        for name, affects, status in activity_types_data:
-            activity_types.append(
-                ActivityType.objects.create(
+            sales_users = []
+
+            for i in range(6):
+
+                user, created = User.objects.get_or_create(
+                    username=f"sales{i}",
+                    defaults={
+                        "role": User.Role.SALES,
+                        "organization": org,
+                        "is_active_member": True
+                    }
+                )
+
+                if created:
+                    user.set_password("Sales@123")
+                    user.save()
+
+                sales_users.append(user)
+
+            self.stdout.write("Sales team ready")
+
+            # ---------------- BUSINESS TYPES ----------------
+
+            bt_names = [
+                "Restaurant","Retail","Gym","Hospital",
+                "Real Estate","School","Salon","Clinic"
+            ]
+
+            business_types = []
+
+            for name in bt_names:
+                obj, _ = BusinessType.objects.get_or_create(
+                    name=name,
+                    organization=org
+                )
+                business_types.append(obj)
+
+            # ---------------- LEAD SOURCES ----------------
+
+            source_names = [
+                "Facebook Ads","Google Ads","Website",
+                "Cold Call","Referral","LinkedIn"
+            ]
+
+            sources = []
+
+            for name in source_names:
+                obj, _ = LeadSource.objects.get_or_create(
+                    name=name,
+                    organization=org
+                )
+                sources.append(obj)
+
+            # ---------------- ACTIVITY TYPES ----------------
+
+            activity_types_data = [
+                ("Call", True, LeadStatus.CALLED),
+                ("Follow Up", True, LeadStatus.FOLLOW_UP),
+                ("Interested", True, LeadStatus.INTERESTED),
+                ("Proposal Sent", True, LeadStatus.PROPOSAL_SENT),
+                ("Meeting", False, None),
+                ("Note", False, None),
+            ]
+
+            activity_types = []
+
+            for name, affects, status in activity_types_data:
+
+                obj, _ = ActivityType.objects.get_or_create(
                     name=name,
                     organization=org,
-                    affects_pipeline=affects,
-                    pipeline_status=status
+                    defaults={
+                        "affects_pipeline": affects,
+                        "pipeline_status": status
+                    }
                 )
-            )
 
-        # DEAL STAGES
-        stages_data = [
-            ("New Deal", 1, False, False),
-            ("Negotiation", 2, False, False),
-            ("Proposal", 3, False, False),
-            ("Won", 4, True, True),
-            ("Lost", 5, True, False)
-        ]
+                activity_types.append(obj)
 
-        deal_stages = []
+            # ---------------- DEAL STAGES ----------------
 
-        for name, order, closed, won in stages_data:
+            stages_data = [
+                ("New Deal", 1, False, False, 10),
+                ("Negotiation", 2, False, False, 40),
+                ("Proposal", 3, False, False, 70),
+                ("Won", 4, True, True, 100),
+                ("Lost", 5, True, False, 0),
+            ]
 
-            deal_stages.append(
-                DealStage.objects.create(
+            deal_stages = []
+
+            for name, order, closed, won, prob in stages_data:
+
+                obj, _ = DealStage.objects.get_or_create(
                     name=name,
-                    order=order,
                     organization=org,
-                    is_closed=closed,
-                    is_won=won
+                    defaults={
+                        "order": order,
+                        "is_closed": closed,
+                        "is_won": won,
+                        "probability": prob
+                    }
                 )
-            )
 
-        # LEADS
-        self.stdout.write("Generating 1000 leads...")
+                deal_stages.append(obj)
 
-        leads = []
+            self.stdout.write("Pipeline stages ready")
 
-        for i in range(1000):
+            # ---------------- LEADS ----------------
 
-            company = random.choice(FIRST_NAMES) + " " + random.choice(COMPANY_SUFFIX)
+            leads = []
 
-            lead = Lead.objects.create(
-                organization=org,
-                name=company,
-                phone=f"+91-9{random.randint(100000000,999999999)}",
-                email=f"{company.replace(' ','').lower()}{i}@example.com",
-                business_type=random.choice(business_types),
-                source=random.choice(sources),
-                status=random.choice([
-                    LeadStatus.NEW,
-                    LeadStatus.CALLED,
-                    LeadStatus.FOLLOW_UP,
-                    LeadStatus.INTERESTED
-                ]),
-                estimated_value=Decimal(random.randint(10000,500000)),
-                assigned_to=random.choice(sales_users)
-            )
+            for i in range(600):
 
-            leads.append(lead)
+                company = random.choice(FIRST_NAMES) + " " + random.choice(COMPANY_SUFFIX)
 
-        # ACTIVITIES
-        self.stdout.write("Generating activities...")
+                lead = Lead.objects.create(
+                    organization=org,
+                    name=company,
+                    phone=f"+91-9{random.randint(100000000,999999999)}",
+                    email=f"{company.replace(' ','').lower()}{i}@example.com",
+                    business_type=random.choice(business_types),
+                    source=random.choice(sources),
+                    status=random.choice([
+                        LeadStatus.NEW,
+                        LeadStatus.CALLED,
+                        LeadStatus.FOLLOW_UP,
+                        LeadStatus.INTERESTED
+                    ]),
+                    estimated_value=Decimal(random.randint(5000, 500000)),
+                    assigned_to=random.choice(sales_users),
+                )
 
-        activities_created = 0
+                leads.append(lead)
 
-        for lead in leads:
+            self.stdout.write("600 leads created")
 
-            activity_count = random.randint(1,4)
+            # ---------------- ACTIVITIES ----------------
 
-            for _ in range(activity_count):
+            for lead in leads:
 
-                Activity.objects.create(
+                for _ in range(random.randint(1,4)):
+
+                    Activity.objects.create(
+                        organization=org,
+                        lead=lead,
+                        user=random.choice(sales_users),
+                        activity_type=random.choice(activity_types),
+                        note=random.choice(NOTES),
+                        next_follow_up=timezone.now() + timedelta(days=random.randint(-3,5))
+                    )
+
+            self.stdout.write("Activities generated")
+
+            # ---------------- DEALS ----------------
+
+            interested_leads = [l for l in leads if l.status == LeadStatus.INTERESTED]
+
+            for lead in random.sample(interested_leads, min(200, len(interested_leads))):
+
+                stage = random.choice(deal_stages)
+
+                deal = Deal.objects.create(
                     organization=org,
                     lead=lead,
-                    user=random.choice(sales_users),
-                    activity_type=random.choice(activity_types),
-                    note=random.choice(NOTES),
-                    next_follow_up=timezone.now()
+                    stage=stage,
+                    value=lead.estimated_value or 50000
                 )
 
-                activities_created += 1
+                if stage.is_closed:
+                    deal.closed_at = timezone.now()
+                    deal.closed_by = random.choice(sales_users)
+                    deal.save(update_fields=["closed_at","closed_by"])
 
-        # DEALS
-        self.stdout.write("Generating deals...")
+            self.stdout.write(self.style.SUCCESS("Deals generated"))
 
-        interested_leads = [l for l in leads if l.status == LeadStatus.INTERESTED]
+            self.stdout.write("")
+            self.stdout.write(self.style.SUCCESS("Demo CRM dataset ready"))
+            self.stdout.write("")
+            self.stdout.write("LOGIN:")
+            self.stdout.write("admin / Admin@123")
+            self.stdout.write("sales0 / Sales@123")
+        finally:
+            clear_system_mode()
 
-        deal_count = min(250, len(interested_leads))
 
-        for lead in random.sample(interested_leads, deal_count):
 
-            stage = random.choice(deal_stages)
 
-            deal = Deal.objects.create(
-                organization=org,
-                lead=lead,
-                stage=stage,
-                value=lead.estimated_value or 50000
-            )
 
-            if stage.is_closed:
-                deal.closed_at = timezone.now()
-                deal.closed_by = random.choice(sales_users)
-                deal.save(update_fields=["closed_at","closed_by"])
 
-        self.stdout.write(self.style.SUCCESS("Demo CRM dataset created"))
 
-        self.stdout.write("")
-        self.stdout.write("LOGIN")
-        self.stdout.write("admin / Admin@123")
-        self.stdout.write("sales0 / Sales@123")
+
+
 
