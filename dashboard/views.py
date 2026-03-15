@@ -49,6 +49,13 @@ def dashboard(request):
         lost_deals=Count("id", filter=Q(stage__is_closed=True, stage__is_won=False)),
     )
 
+    # -------- TOP LEADS --------
+    top_leads = Lead.objects.active().order_by(
+        "-priority_score"
+    ).select_related(
+        "assigned_to"
+    )[:5]
+
     context = {
         "total_leads": lead_stats["total"] or 0,
         "interested_leads": lead_stats["interested"] or 0,
@@ -59,6 +66,7 @@ def dashboard(request):
         "open_pipeline_value": deal_stats["open_pipeline_value"] or 0,
         "won_deals": deal_stats["won_deals"] or 0,
         "lost_deals": deal_stats["lost_deals"] or 0,
+        "top_leads": top_leads,
     }
 
     cache.set(cache_key, context, 60)

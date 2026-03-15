@@ -147,6 +147,32 @@
 
         </div>
 
+        <!-- High priority leads -->
+        <div class="col-md-6 mt-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5>🔥 High Priority Leads</h5>
+                    <ul class="list-group">
+                        {% for lead in top_leads %}
+                            <li class="list-group-item d-flex justify-content-between">
+                                <a href="{% url 'lead_detail' lead.id %}">
+                                    {{ lead.name }}
+                                </a>
+                                <span class="badge bg-danger">
+                                     {{ lead.priority_score }}
+                                </span>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item text-muted">
+                                No high priority leads
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
     </div>
+
 
 {% endblock %}

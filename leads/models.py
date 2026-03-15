@@ -78,7 +78,12 @@ class Lead(SaaSBaseModel, SoftDeleteBaseModel):
         null=True
     )
 
-    priority_score = models.IntegerField(default=0)
+    priority_score = models.IntegerField(default=0, db_index=True)
+
+    is_vip = models.BooleanField(
+        default=False,
+        db_index=True
+    )
 
     notes = models.TextField(blank=True, null=True)
 
