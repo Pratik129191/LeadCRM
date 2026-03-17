@@ -3,7 +3,7 @@ from django.db import transaction
 from ..models import Note
 from core.events.event_bus import emit
 from core.events.events import EventTypes
-from core.constants import EntityType
+from core.constants import EntityType, AuditAction
 
 
 class NoteService:
@@ -23,13 +23,16 @@ class NoteService:
             payload={
                 "organization": organization,
                 "user": user,
+                "action": AuditAction.NOTE_CREATED,
                 "entity_type": EntityType.NOTE,
                 "entity_id": note.id,
-                "note": note,
                 "lead": lead,
-                "deal": deal
+                "metadata": {
+                    "preview": content[:80]
+                }
             }
         )
 
+        return note
 
 

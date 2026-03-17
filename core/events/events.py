@@ -22,3 +22,4 @@ class EventTypes:
     # Note events
     NOTE_CREATED = "NOTE_CREATED"
 
+

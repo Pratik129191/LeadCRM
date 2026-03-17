@@ -32,6 +32,11 @@ class AuditAction:
     DEAL_LOST = "DEAL_LOST"
     DEAL_REOPENED = "DEAL_REOPENED"
 
+    NOTE_CREATED = "NOTE_CREATED"
+
+    TASK_CREATED = "TASK_CREATED"
+    TASK_COMPLETED = "TASK_COMPLETED"
+
 
 class EntityType:
     LEAD = "LEAD"
